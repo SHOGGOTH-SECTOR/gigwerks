@@ -1,0 +1,43 @@
+{
+  "file": "mrp_lambda_state.png",
+  "sha256_msg": "ed374dc20aafd30e0ec0fef10745d8823ee0b3beacd876a6afcfe0843f0d2a83",
+  "sha256_msg_b64": "7TdNwgqv0w4OwP7xB0XYgj7gs76s2Hamr8/ghD8NKoM=",
+  "parity": "000000000000000000000000150000000000000000000000000003170A020F1618520855090F0618024E1B06530C0F0D0701174110081B0F0000001D171B150B021B0D0000596F22384C230D4349476C630E0E5016161E1B040000007D5C434953565359564158431B1550494B5D5E100F1C4D1D0F41403B455A595C5C180A1217702D2D50686173652D41227D",
+  "parity_len": 141,
+  "ecc_scheme": "xor",
+  "bits_per_channel": 1,
+  "channels": {
+    "R": {
+      "payload_len": 131,
+      "used_bits": 1160,
+      "capacity_bits": 262144
+    },
+    "G": {
+      "payload_len": 141,
+      "used_bits": 1240,
+      "capacity_bits": 262144
+    },
+    "B": {
+      "payload_len": 534,
+      "used_bits": 4384,
+      "capacity_bits": 262144
+    }
+  },
+  "headers": {
+    "R": {
+      "magic": "MRP1",
+      "channel": "R",
+      "flags": 1
+    },
+    "G": {
+      "magic": "MRP1",
+      "channel": "G",
+      "flags": 1
+    },
+    "B": {
+      "magic": "MRP1",
+      "channel": "B",
+      "flags": 1
+    }
+  }
+}

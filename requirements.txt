@@ -1,0 +1,12 @@
+numpy
+opencv-python
+scipy
+scikit-image
+matplotlib
+pillow
+pyserial
+PyYAML
+aiohttp
+jsonschema
+pytest
+reedsolo
