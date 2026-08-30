@@ -1,4 +1,0 @@
-# Core Python dependencies will be added as modules land.
-pyzmq
-requests
-pytest

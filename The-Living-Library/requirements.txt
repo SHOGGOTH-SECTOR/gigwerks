@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-pytest
-pytest-asyncio
-asyncpg
-redis
-httpx
