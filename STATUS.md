@@ -55,8 +55,8 @@ are in `BOOKING.md`.
 | **Trace** | built, unwired | `Actor.run_gig` opens no spans; `Trace.gig` is a string, `span.gig_id` an FK'd integer, and nothing converts |
 | **Fact store** | schema only | **not per-project**; **not 3 provenance columns**; specs not embedded/linked |
 | **SARCASM** | built, persistable, unwired | not fed from working; contraction never invoked |
-| **Immediate 64k** | **not built** | `Working` is one band, not two |
-| **Working 128k** | partial | band exists; **no condensing process** |
+| **Immediate 64k** | **built, unwired** | `Working.curate` verbatim band; nothing in `main.ml` assembles context yet |
+| **Working 128k** | **built, unwired** | second band + `Working.contract` (mechanical, encoder-authored) condense on spill; not fed live |
 | **Introspection** | built, persistable, unwired | no CLI door; the AI cannot reach it from the running program |
 | **RAG (a tool)** | **not built** | no corpus, no ingest, no capability row |
 | **CLI** | 6 commands | `queue`, `import`, `export`, `introspect` |
@@ -91,9 +91,13 @@ booking is decided by the engine the design says decides it, and
 Nothing calls them, so SARCASM and introspection still do not survive a restart.
 This is now plumbing, not design.
 
-**3. Immediate/working as two bands, with condensing between them.** The one
-piece where the wrong shape was built rather than nothing: one band with a floor
-and ceiling, when it needs 64k verbatim plus 128k where contraction happens.
+**3. ~~Immediate/working as two bands, with condensing between them.~~** Built.
+`Working.curate` fills a 64k verbatim immediate band and condenses the overflow
+into a 128k working band rather than evicting it; `Working.contract` is the
+condensing process the shape was missing — mechanical and encoder-authored (no
+model in the path), keeps `full` addressable, reports its `ratio`, and never
+drops a `[[link]]` sentence. What remains is *wiring*: nothing in `main.ml`
+assembles a live context yet, and the working band is not fed from SARCASM.
 
 **4. Per-project fact stores with three provenance columns**, specs embedded and
 linked. Still schema-only, and it is what actors reference.
