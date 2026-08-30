@@ -14,14 +14,20 @@ type item = {
   tokens   : int;         (* estimated *)
   pinned   : bool;        (* soul, live rulings: never evicted *)
   salience : float;
+  (* A contraction the SOURCE already computed -- a SARCASM digest is the
+     canonical contracted form and what search runs on, so when this item
+     spills into the working band that digest is reused rather than a fresh one
+     computed. None means "contract me on spill". Immediate never looks at it:
+     immediate is verbatim. *)
+  ready_digest : string option;
 }
 
 (* ~4 chars per token. Wrong in the third digit, right in the first, and the
    decision it feeds is "have we reached the floor", not billing. *)
 let estimate text = (String.length text + 3) / 4
 
-let item ?(pinned = false) ?(salience = 0.0) text =
-  { text; tokens = estimate text; pinned; salience }
+let item ?(pinned = false) ?(salience = 0.0) ?ready_digest text =
+  { text; tokens = estimate text; pinned; salience; ready_digest }
 
 type assembly = {
   included : item list;
@@ -205,8 +211,13 @@ let curate ?(floor = 64_000) ?(immediate_ceiling = 64_000)
   let imm_rest, imm_tokens, overflow = fill_imm [] pinned_tokens [] rest in
   let immediate = List.map verbatim pinned @ imm_rest in
   let condense i =
-    let budget = max 1 (int_of_float (digest_ratio *. float_of_int i.tokens)) in
-    let digest = contract ~budget i.text in
+    let digest =
+      match i.ready_digest with
+      | Some d -> d (* the source already contracted this, mechanically *)
+      | None ->
+          let budget = max 1 (int_of_float (digest_ratio *. float_of_int i.tokens)) in
+          contract ~budget i.text
+    in
     let ratio =
       if String.length i.text = 0 then 1.0
       else

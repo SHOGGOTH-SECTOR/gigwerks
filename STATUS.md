@@ -4,14 +4,20 @@ Measured, not estimated. Re-measured after the booking path landed.
 
 ## The headline
 
-**18 OCaml modules. 10 are wired into the running program.** Was 4 of 15.
+**19 OCaml modules. 15 are wired into the running program.** Was 4 of 15.
 
 ```
 WIRED       Caps  Actor  Behaviors  Store  Booking
             Conditions  Terms  Grants  Kit  Phases
-NOT WIRED   Bridge  Persist  Trace  Introspect
-            Reconstruct  Affect  Embed  Working
+            Context  Working  Persist  Reconstruct  Affect  Embed
+NOT WIRED   Bridge(gate)  Trace  Introspect
 ```
+
+`gigwerk context` (new) assembles the active working memory: `Context.assemble`
+pins soul + live rulings, ranks SARCASM docs by affect, and runs `Working`'s two
+bands — so `Persist.load_store`, `Reconstruct`, `Affect` and `Embed` are now all
+on a live path. Only the READ side: nothing yet writes a new SARCASM doc from a
+finished turn, so `Persist`'s save path and `Trace`/`Introspect` stay unwired.
 
 `Bridge` is a special case: `Store.reviews` and `gigwerk review|forms` call
 `Bridge.confidence`, so **SWI-Prolog is reachable from the running program**.
@@ -51,15 +57,15 @@ are in `BOOKING.md`.
 | **Actor runtime** | minimal | two behaviours; no inbox delivery; no step loop |
 | **Confidence** | **wired** | soul_version never stamped, so bands are not yet soul-scoped |
 | **Elpi gate** | built, unwired | `Bridge.gate` works; `booking.ml` uses `Conditions` only, and the two **disagree** — see below |
-| **Persistence** | built, unwired | `Persist` round-trips; nothing in `main.ml` calls it |
+| **Persistence** | **read path wired** | `Context.assemble` calls `Persist.load_store`; the save path (writing SARCASM/introspect/trace from a live turn) is still uncalled |
 | **Trace** | built, unwired | `Actor.run_gig` opens no spans; `Trace.gig` is a string, `span.gig_id` an FK'd integer, and nothing converts |
 | **Fact store** | schema only | **not per-project**; **not 3 provenance columns**; specs not embedded/linked |
-| **SARCASM** | built, persistable, unwired | not fed from working; contraction never invoked |
-| **Immediate 64k** | **built, unwired** | `Working.curate` verbatim band; nothing in `main.ml` assembles context yet |
-| **Working 128k** | **built, unwired** | second band + `Working.contract` (mechanical, encoder-authored) condense on spill; not fed live |
+| **SARCASM** | **read into context** | `Context.assemble` loads docs into the working band, reusing each doc's stored digest on spill; strike/walk and the write-back from a turn are still unwired |
+| **Immediate 64k** | **built, wired** | `Working.curate` verbatim band; assembled by `gigwerk context` |
+| **Working 128k** | **built, wired** | second band + `Working.contract` (mechanical, encoder-authored) condense on spill; fed live by `Context.assemble` |
 | **Introspection** | built, persistable, unwired | no CLI door; the AI cannot reach it from the running program |
 | **RAG (a tool)** | **not built** | no corpus, no ingest, no capability row |
-| **CLI** | 6 commands | `queue`, `import`, `export`, `introspect` |
+| **CLI** | 7 commands | `queue`, `import`, `export`, `introspect` |
 | **Soul** | schema + v1 body | never loaded; `soul_version` never stamped on a gig or review |
 
 ---
@@ -87,17 +93,20 @@ wired.
 booking is decided by the engine the design says decides it, and
 `booking_verdict.decided_by` starts saying `elpi` instead of `conditions`.
 
-**2. Wire `Persist`** — `Persist` and `sql/persist.sql` exist and round-trip.
-Nothing calls them, so SARCASM and introspection still do not survive a restart.
-This is now plumbing, not design.
+**2. Wire `Persist`'s save path** — the read path is now wired (`Context.assemble`
+calls `Persist.load_store`), so SARCASM survives a restart into the active
+context. The remaining half is the WRITE-BACK: nothing yet turns a finished turn
+into a new SARCASM doc, an introspection entry, or a trace span. That is the loop
+that lets the machine remember what it just did, and it is now the top gap.
 
-**3. ~~Immediate/working as two bands, with condensing between them.~~** Built.
-`Working.curate` fills a 64k verbatim immediate band and condenses the overflow
-into a 128k working band rather than evicting it; `Working.contract` is the
-condensing process the shape was missing — mechanical and encoder-authored (no
-model in the path), keeps `full` addressable, reports its `ratio`, and never
-drops a `[[link]]` sentence. What remains is *wiring*: nothing in `main.ml`
-assembles a live context yet, and the working band is not fed from SARCASM.
+**3. ~~Immediate/working as two bands, with condensing between them.~~** Built and
+wired. `Working.curate` fills a 64k verbatim immediate band and condenses the
+overflow into a 128k working band rather than evicting it; `Working.contract` is
+the condensing process the shape was missing — mechanical and encoder-authored
+(no model in the path), keeps `full` addressable, reports its `ratio`, never
+drops a `[[link]]` sentence. `gigwerk context` assembles it from the store:
+`Context.assemble` pins soul + live rulings, ranks SARCASM docs by affect, and
+reuses each doc's stored digest on spill. Seed and demo in `sql/seed_memory.sql`.
 
 **4. Per-project fact stores with three provenance columns**, specs embedded and
 linked. Still schema-only, and it is what actors reference.
@@ -115,5 +124,8 @@ confidence rule (two independent implementations agreeing, now reachable from th
 program), the booking path (238 checks, mutation-verified), the linter layer
 (five languages, each proven able to fail).
 
-What is genuinely absent: the memory layers are built and cannot yet remember,
-and the gate that is supposed to decide bookings is not the one deciding them.
+What is genuinely absent: the memory layers can now be READ into the active
+context (`gigwerk context`), but nothing in the running program WRITES a new
+memory from a finished turn yet — so the machine can recall what it was seeded
+with but not what it just did. And the gate that is supposed to decide bookings
+is not the one deciding them.
